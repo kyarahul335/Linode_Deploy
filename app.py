@@ -1,15 +1,15 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, send_file
 import requests
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import os
+import io
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for flashing messages
 
 # File to store tokens
-#token_file = "tokens.json"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 token_file = os.path.join(BASE_DIR, "tokens.json")
 
@@ -93,15 +93,6 @@ def list_linode_instances(token):
         flash(f"Failed to retrieve Linode instances: {response.json()}")
         return []
 
-# Save IPs to a text file
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current script directory
-ip_file = os.path.join(BASE_DIR, "created_ips.txt")  # Correct file path
-
-def save_ips_to_file(ips, region, instance_type):
-    with open(ip_file, "a") as file:  # Use the corrected file path here
-        file.write(f"{region}, {instance_type}, {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        file.write(", ".join(ips) + "\n")
-
 @app.route("/")
 def index():
     tokens = load_tokens()
@@ -140,10 +131,14 @@ def create_instances():
             future.result()
 
     if ips:
-        save_ips_to_file(ips, region, instance_type)
-        flash("All instance IPs have been saved to 'created_ips.txt'.")
-        flash(f"All instance IPs: {', '.join(ips)}")
+        # Create a text file with the instance details
+        file_content = f"Region: {region}\nInstance Type: {instance_type}\nRoot Password: {root_password}\nIPs:\n"
+        file_content += "\n".join(ips)
+        file_stream = io.BytesIO(file_content.encode('utf-8'))
+        file_stream.seek(0)
+        return send_file(file_stream, as_attachment=True, download_name=f"{region}_{instance_type}_instances.txt", mimetype='text/plain')
 
+    flash("No instances were created.")
     return redirect(url_for("index"))
 
 @app.route("/delete_instances", methods=["POST"])
@@ -154,18 +149,10 @@ def delete_instances():
         flash("No instances found.")
         return redirect(url_for("index"))
 
-    delete_choice = request.form.get("delete_choice")
-    if delete_choice.lower() == "all":
-        for instance in instances:
-            delete_linode_instance(instance['id'], token)
-    else:
-        indices = [int(i.strip()) for i in delete_choice.split(",")]
-        for idx in indices:
-            if 1 <= idx <= len(instances):
-                delete_linode_instance(instances[idx - 1]['id'], token)
-            else:
-                flash(f"Invalid choice: {idx}")
+    for instance in instances:
+        delete_linode_instance(instance['id'], token)
 
+    flash("All instances deleted successfully.")
     return redirect(url_for("index"))
 
 @app.route("/get_instances")
