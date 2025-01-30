@@ -174,5 +174,5 @@ def get_instances():
     instances = list_linode_instances(token)
     return jsonify(instances)
 
-#if __name__ == "__main__":
-#    app.run()
+if __name__ == "__main__":
+    app.run()
