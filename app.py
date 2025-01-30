@@ -170,4 +170,4 @@ def get_instances():
     return jsonify(instances)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
