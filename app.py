@@ -9,7 +9,9 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for flashing messages
 
 # File to store tokens
-token_file = "tokens.json"
+#token_file = "tokens.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+token_file = os.path.join(BASE_DIR, "tokens.json")
 
 # Ensure the tokens file exists
 if not os.path.exists(token_file):
@@ -92,8 +94,11 @@ def list_linode_instances(token):
         return []
 
 # Save IPs to a text file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current script directory
+ip_file = os.path.join(BASE_DIR, "created_ips.txt")  # Correct file path
+
 def save_ips_to_file(ips, region, instance_type):
-    with open("created_ips.txt", "a") as file:
+    with open(ip_file, "a") as file:  # Use the corrected file path here
         file.write(f"{region}, {instance_type}, {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         file.write(", ".join(ips) + "\n")
 
