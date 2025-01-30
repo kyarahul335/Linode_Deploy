@@ -144,10 +144,17 @@ def create_instances():
 @app.route("/delete_instances", methods=["POST"])
 def delete_instances():
     token = request.form.get("token")
-    instances = list_linode_instances(token)
-    if not instances:
-        flash("No instances found.")
+    instance_ids = request.form.getlist("instance_ids")  # Get selected instance IDs
+
+    if not instance_ids:
+        flash("No instances selected for deletion.")
         return redirect(url_for("index"))
+
+    for instance_id in instance_ids:
+        delete_linode_instance(instance_id, token)
+
+    flash("Selected instances deleted successfully.")
+    return redirect(url_for("index"))
 
     for instance in instances:
         delete_linode_instance(instance['id'], token)
