@@ -78,6 +78,25 @@
       .instance-item p {
         margin: 5px 0;
       }
+      .ips-list {
+        margin-top: 20px;
+        background: #fff;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .ips-list h3 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+      }
+      .ips-list ul {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+      .ips-list ul li {
+        padding: 5px 0;
+      }
     </style>
   </head>
   <body>
@@ -158,6 +177,12 @@
       <button type="submit">Delete All Instances</button>
     </form>
 
+    <h2>Show All Instances' IPs</h2>
+    <button onclick="fetchAllIPs()">Show All IPs</button>
+    <div id="all-ips-list" class="ips-list">
+      <!-- IPs will be dynamically loaded here -->
+    </div>
+
     <script>
       async function fetchInstances(token) {
         const response = await fetch(
@@ -183,6 +208,31 @@
                 `;
           instancesList.appendChild(instanceDiv);
         });
+      }
+
+      async function fetchAllIPs() {
+        const token = document.getElementById("token").value;
+        const response = await fetch(
+          `/get_instances?token=${encodeURIComponent(token)}`
+        );
+        const instances = await response.json();
+        const ipsList = document.getElementById("all-ips-list");
+        ipsList.innerHTML = "";
+
+        if (instances.length === 0) {
+          ipsList.innerHTML = "<p>No instances found.</p>";
+          return;
+        }
+
+        const ips = instances.flatMap(instance => instance.ipv4);
+        const ipsDiv = document.createElement("div");
+        ipsDiv.innerHTML = `
+          <h3>All IPs</h3>
+          <ul>
+            ${ips.map(ip => `<li>${ip}</li>`).join("")}
+          </ul>
+        `;
+        ipsList.appendChild(ipsDiv);
       }
     </script>
   </body>
